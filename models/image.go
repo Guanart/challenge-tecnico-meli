@@ -11,7 +11,7 @@ type Image struct {
 	Vulnerabilities string `json:"vulnerabilities"`
 }
 
-func GetImages() ([]Image, error) {
+func GetImages() ([]map[string]interface{}, error) {
 	rows, err := db.Connection.Query("SELECT id, name FROM images")
 
 	if err != nil {
@@ -20,17 +20,20 @@ func GetImages() ([]Image, error) {
 
 	defer rows.Close() // con defer nos aseguramos que se cierra la conexión correctamente
 
-	images := make([]Image, 0) // Crea un slice (array) de Image vacío con capacidad infinita
+	var images []map[string]interface{}
 
 	for rows.Next() {
-		image := Image{}
-		err = rows.Scan(&image.Id, &image.Name, &image.Vulnerabilities) // Escanea los valores de la fila y los guarda en las variables que le pasamos por parámetro (en este caso, los atributos del struct)
+		var image Image
+		err = rows.Scan(&image.Id, &image.Name) // Escanea los valores de la fila y los guarda en las variables que le pasamos por parámetro (en este caso, los atributos del struct)
 
 		if err != nil {
 			return nil, err
 		}
 
-		images = append(images, image)
+		images = append(images, map[string]interface{}{
+			"id":   image.Id,
+			"name": image.Name,
+		})
 	}
 
 	if err := rows.Err(); err != nil {
@@ -57,4 +60,35 @@ func GetImageByName(name string) (Image, error) {
 		return Image{}, sqlErr
 	}
 	return image, nil
+}
+
+func AddImage(newImage Image) (bool, error) {
+	// Validar que no exista la imagen
+	image, err := GetImageByName(newImage.Name)
+	if image.Name != "" {
+		return false, nil
+	}
+
+	tx, err := db.Connection.Begin()
+	if err != nil {
+		return false, err
+	}
+
+	stmt, err := tx.Prepare("INSERT INTO images (name, vulnerabilities) VALUES (?, ?)")
+
+	if err != nil {
+		return false, err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(newImage.Name, newImage.Vulnerabilities)
+
+	if err != nil {
+		return false, err
+	}
+
+	tx.Commit()
+
+	return true, nil
 }

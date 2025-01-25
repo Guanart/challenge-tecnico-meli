@@ -45,7 +45,7 @@ func getImageByName(c *gin.Context) {
 	db.CheckError(err)
 
 	if image.Name == "" {
-		c.JSON(http.StatusNotFound, gin.H{"data": image, "error": "Resource not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Resource not found"})
 		return
 	} else {
 		c.JSON(http.StatusOK, gin.H{"data": image, "message": "Image found"})
@@ -54,5 +54,20 @@ func getImageByName(c *gin.Context) {
 }
 
 func addImage(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "addImage Called"})
+	var json models.Image // Declaramos una variable de tipo Image
+
+	if err := c.ShouldBindJSON(&json); err != nil { // ShoulBindJSON recibe el puntero a una variable, y la rellena con los datos del JSON que recibe en la petición. Si hay un error, lo devuelve
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	success, err := models.AddImage(json)
+
+	if success {
+		// Ejecutar un hilo que escanee la imagen
+		// go scanImage(json.Name)
+		c.JSON(http.StatusOK, gin.H{"message": "Success"})
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+	}
 }
