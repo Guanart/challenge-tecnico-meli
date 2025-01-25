@@ -16,14 +16,14 @@ func ConnectDatabase() error {
 	// Crear archivo de base de datos si no existe
 	if _, err := os.Stat(path); err != nil {
 		file, err := os.Create(path)
-		checkError(err)
+		CheckError(err)
 		file.Close()
 		println("Archivo images.db creado")
 	}
 
 	// Crear conexión a la base de datos
 	db, err := sql.Open("sqlite3", "./images.db") // sqlite3 driver
-	checkError(err)
+	CheckError(err)
 	Connection = db
 	println("Conexión a la base de datos establecida")
 	initDB()
@@ -38,11 +38,11 @@ func initDB() {
 		vulnerabilities TEXT NOT NULL
 		);`
 	prep_stmt, err := Connection.Prepare(stmt)
-	checkError(err)
+	CheckError(err)
 	prep_stmt.Exec()
 }
 
-func checkError(err error) {
+func CheckError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"image-vuln-scanner-api/db"
+	"image-vuln-scanner-api/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,22 @@ func main() {
 }
 
 func getImages(c *gin.Context) { // c *gin.Context es el contexto de la petición HTTP. Tiene información sobre la petición y la respuesta. Podemos modificar el estado de Gin desde este contexto.
-	c.JSON(http.StatusOK, gin.H{"message": "getImages Called"})
+	images, err := models.GetImages()
+	db.CheckError(err)
+
+	if images == nil {
+		c.JSON(http.StatusNotFound, gin.H{"data": images, "message": "Resource not found"})
+		return
+	} else {
+		var message string
+		if len(images) > 0 {
+			message = "Images found"
+		} else {
+			message = "Images not found"
+		}
+		c.JSON(http.StatusOK, gin.H{"data": images, "message": message})
+		return
+	}
 }
 
 func getImageByName(c *gin.Context) {

@@ -11,3 +11,7 @@ El objetivo será construir una API en Go (preferentemente) o Python que permita
 
 ## Solución propuesta
 Para la solución, se utilizará el lenguaje Go con el framework Gin, junto a una base de datos sqlite para la persistencia. Para realizar el análisis de vulnerabilidades en las imágenes docker, se optó por el scanner Grype.
+
+## Posibles mejoras
+- Hacer un refactor en connection.go: hacerlo orientado a objetos y evitar hardcodear el path de la BD (cargar el valor de un archivo de configuración e inyectarlo a una clase Conexión)
+- Desacoplar del archivo main.go las funciones asociadas a cada ruta. Crear un controller o service.
