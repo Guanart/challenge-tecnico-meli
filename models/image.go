@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"image-vuln-scanner-api/db"
 )
 
@@ -37,4 +38,23 @@ func GetImages() ([]Image, error) {
 	}
 
 	return images, err
+}
+
+func GetImageByName(name string) (Image, error) {
+	stmt, err := db.Connection.Prepare("SELECT id, name, vulnerabilities FROM images WHERE name = ?")
+
+	if err != nil {
+		return Image{}, err
+	}
+
+	image := Image{}
+	sqlErr := stmt.QueryRow(name).Scan(&image.Id, &image.Name, &image.Vulnerabilities)
+
+	if sqlErr != nil {
+		if sqlErr == sql.ErrNoRows {
+			return Image{}, nil
+		}
+		return Image{}, sqlErr
+	}
+	return image, nil
 }

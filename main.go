@@ -25,7 +25,7 @@ func getImages(c *gin.Context) { // c *gin.Context es el contexto de la petició
 	db.CheckError(err)
 
 	if images == nil {
-		c.JSON(http.StatusNotFound, gin.H{"data": images, "message": "Resource not found"})
+		c.JSON(http.StatusNotFound, gin.H{"data": images, "error": "Resource not found"})
 		return
 	} else {
 		var message string
@@ -41,7 +41,16 @@ func getImages(c *gin.Context) { // c *gin.Context es el contexto de la petició
 
 func getImageByName(c *gin.Context) {
 	name := c.Param("name")
-	c.JSON(http.StatusOK, gin.H{"message": "getImageByName " + name + " Called"})
+	image, err := models.GetImageByName(name)
+	db.CheckError(err)
+
+	if image.Name == "" {
+		c.JSON(http.StatusNotFound, gin.H{"data": image, "error": "Resource not found"})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{"data": image, "message": "Image found"})
+		return
+	}
 }
 
 func addImage(c *gin.Context) {
