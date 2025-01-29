@@ -2,13 +2,20 @@ package models
 
 import (
 	"database/sql"
+	"encoding/json"
 	"image-vuln-scanner-api/db"
 )
 
+type Vulnerability struct {
+	ID          string `json:"id"`
+	Severity    string `json:"severity"`
+	Description string `json:"description"`
+}
+
 type Image struct {
-	Id              int    `json:"id"`
-	Name            string `json:"name"`
-	Vulnerabilities string `json:"vulnerabilities"`
+	Id              int             `json:"id"`
+	Name            string          `json:"name"`
+	Vulnerabilities []Vulnerability `json:"vulnerabilities"`
 }
 
 func GetImages() ([]map[string]interface{}, error) {
@@ -51,7 +58,8 @@ func GetImageByName(name string) (Image, error) {
 	}
 
 	image := Image{}
-	sqlErr := stmt.QueryRow(name).Scan(&image.Id, &image.Name, &image.Vulnerabilities)
+	var vulnerabilities []byte
+	sqlErr := stmt.QueryRow(name).Scan(&image.Id, &image.Name, &vulnerabilities)
 
 	if sqlErr != nil {
 		if sqlErr == sql.ErrNoRows {
@@ -59,6 +67,12 @@ func GetImageByName(name string) (Image, error) {
 		}
 		return Image{}, sqlErr
 	}
+
+	// Deserializar las vulnerabilidades
+	if err := json.Unmarshal(vulnerabilities, &image.Vulnerabilities); err != nil {
+		return Image{}, nil
+	}
+
 	return image, nil
 }
 
@@ -74,7 +88,7 @@ func AddImage(newImage Image) (bool, error) {
 		return false, err
 	}
 
-	stmt, err := tx.Prepare("INSERT INTO images (name, vulnerabilities) VALUES (?, ?)")
+	stmt, err := tx.Prepare("INSERT INTO images (name) VALUES (?)")
 
 	if err != nil {
 		return false, err
@@ -82,7 +96,7 @@ func AddImage(newImage Image) (bool, error) {
 
 	defer stmt.Close()
 
-	_, err = stmt.Exec(newImage.Name, newImage.Vulnerabilities)
+	_, err = stmt.Exec(newImage.Name)
 
 	if err != nil {
 		return false, err

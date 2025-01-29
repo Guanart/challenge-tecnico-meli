@@ -35,7 +35,7 @@ func initDB() {
 	stmt := `CREATE TABLE IF NOT EXISTS images (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL,
-		vulnerabilities TEXT NOT NULL
+		vulnerabilities TEXT NULL
 		);`
 	prep_stmt, err := Connection.Prepare(stmt)
 	CheckError(err)

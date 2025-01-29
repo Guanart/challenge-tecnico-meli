@@ -68,6 +68,6 @@ func addImage(c *gin.Context) {
 		go ScanImage(json.Name)
 		c.JSON(http.StatusOK, gin.H{"message": "Image added successfully. Scanning image..."})
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
 }

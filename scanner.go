@@ -1,70 +1,94 @@
 package main
 
 import (
-	"context"
+	"encoding/json"
 	"fmt"
 	"image-vuln-scanner-api/db"
-
+	"image-vuln-scanner-api/models"
+	"io/ioutil"
+	"os"
+	"os/exec"
 	// "fmt"
 	// "net/http"
 	// "testing"
-
-	"github.com/testcontainers/testcontainers-go"
 )
 
-// StdoutLogConsumer is a LogConsumer that prints the log to stdout
-type StdoutLogConsumer struct {
-	ImageName string
-	Output    string
+// type Vulnerability struct {
+// 	ID          string  `json:"id"`
+// 	Severity    string  `json:"severity"`
+// 	Description string  `json:"description"`
+// 	BaseScore   float64 `json:"baseScore"`
+// 	FixState    string  `json:"fixState"`
+// }
+
+// func (t Vulnerability) toString() string {
+// 	bytes, err := json.Marshal(t)
+// 	if err != nil {
+// 		fmt.Println(err.Error())
+// 		os.Exit(1)
+// 	}
+// 	return string(bytes)
+// }
+
+type Match struct {
+	Vulnerability models.Vulnerability `json:"vulnerability"` // key "vulnerability" de cada objeto vulnerability
 }
 
-// Accept() prints the log to stdout
-func (lc *StdoutLogConsumer) Accept(l testcontainers.Log) {
-	fmt.Print(string(l.Content))
-	// Guardar los resultados en memoria
-	lc.Output += string(l.Content)
+type Matches struct {
+	Matches []Match `json:"matches"` // key "matches"
 }
 
 func ScanImage(name string) (bool, error) {
-	ctx := context.Background() // Contexto del contenedor
-	g := StdoutLogConsumer{ImageName: name, Output: ""}
+	fileName := randomString(10) + ".json"
+	file := "/tmp/" + fileName
+	containerName := randomString(10)
+	volumeName := "sharedVolume"
 
-	req := testcontainers.ContainerRequest{
-		Image: "cgr.dev/chainguard/grype:latest",
-		// WaitingFor: wait.ForLog("Starting Grype API server"),
-		// Cmd:        []string{name}, // Imagen a escanear. argumento opcional: --scope all-layers
-		Cmd: []string{"--output", "json", name}, // Imagen a escanear. argumento opcional: --scope all-layers
-		LogConsumerCfg: &testcontainers.LogConsumerConfig{
-			Consumers: []testcontainers.LogConsumer{&g},
-		},
-	}
-
+	// Crear contenedor grype wolfi con el volumen compartido
 	fmt.Printf("(*) Scanning image \"%s\"...\n", name)
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
+	runCmd := exec.Command("docker", "run", "--name", containerName, "-v", volumeName+":/tmp/", "cgr.dev/chainguard/grype", name, "--output", "json", "--file", file)
 
+	// docker run --name challenge -v challenge:/tmp/ cgr.dev/chainguard/grype alpine --output json --file asdasd.txt
+	err := runCmd.Run()
 	if err != nil {
-		fmt.Printf("Error creating container: %v\n", err)
+		fmt.Printf("Error running command docker run: %v\n", err.Error())
 		return false, err
 	}
 
-	// Esperar a que el contenedor termine - GO NO TIENE WHILE
-	for container.IsRunning() {
-		// fmt.Println("Container is running")
+	// Copiar el archivo de output a la máquina host desde el volumen
+	cpCmd := exec.Command("docker", "cp", containerName+":/tmp/"+fileName, "./"+fileName)
+	err = cpCmd.Run()
+	if err != nil {
+		fmt.Printf("Error copying file: %s\n", err)
+		return false, err
 	}
 
-	// logs, _ := container.Logs(ctx)
-	// bytes, _ := io.ReadAll(logs)
-	// fmt.Printf("Container logs: \n%s", string(bytes))
+	// Eliminar contenedor
+	dockerRmCmd := exec.Command("docker", "rm", containerName)
+	err = dockerRmCmd.Run()
+	if err != nil {
+		fmt.Printf("Error removing container: %s\n", err.Error())
+		return false, err
+	}
 
-	fmt.Printf("(*) Image \"%s\" scanned\n", name)
+	// Leer archivo de output
+	// https://danilodellaquila.com/es/blog/leer-ficheros-json-en-golang
+	raw, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 
-	return saveResults(name, g.Output), nil
+	json := formatJson(raw)
+
+	// Eliminar archivo de output
+	os.Remove(fileName)
+	fmt.Printf("(*) File deleted")
+
+	return saveResults(name, json), nil
 }
 
-func saveResults(name string, results string) bool {
+func saveResults(name string, results []byte) bool {
 	tx, err := db.Connection.Begin()
 	db.CheckError(err)
 	stmt, err := tx.Prepare("UPDATE images SET vulnerabilities = ? WHERE name = ?")
@@ -77,4 +101,35 @@ func saveResults(name string, results string) bool {
 	fmt.Printf("(*) Image %s results saved on database\n", name)
 
 	return true
+}
+
+func formatJson(raw []byte) []byte {
+	var results Matches
+	err := json.Unmarshal(raw, &results)
+	if err != nil {
+		fmt.Printf(err.Error())
+	}
+
+	var vulnerabilities []models.Vulnerability
+	for _, value := range results.Matches {
+		vuln := value.Vulnerability
+		vulnerabilities = append(vulnerabilities, vuln)
+	}
+
+	// var vulnerabilities
+	// for _, value := range results.Matches {
+	// 	vuln := value.Vulnerability
+	// 	vulnerabilities = append(vulnerabilities, map[string]interface{}{
+	// 		"id":   image.Id,
+	// 		"name": image.Name,
+	// 	})
+	// }
+
+	json, err := json.Marshal(vulnerabilities)
+	if err != nil {
+		fmt.Printf("Error marshaling vulnerabilities: %s\n", err)
+		return []byte{}
+	}
+
+	return json
 }
