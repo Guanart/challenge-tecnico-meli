@@ -44,6 +44,6 @@ func initDB() {
 
 func CheckError(err error) {
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 }

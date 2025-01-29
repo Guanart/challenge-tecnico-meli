@@ -17,7 +17,7 @@ func main() {
 		v1.GET("image/:name", getImageByName)
 		v1.POST("image", addImage)
 	}
-	router.Run(":8080")
+	router.Run(":8081")
 }
 
 func getImages(c *gin.Context) { // c *gin.Context es el contexto de la petición HTTP. Tiene información sobre la petición y la respuesta. Podemos modificar el estado de Gin desde este contexto.
@@ -65,8 +65,8 @@ func addImage(c *gin.Context) {
 
 	if success {
 		// Ejecutar un hilo que escanee la imagen
-		// go scanImage(json.Name)
-		c.JSON(http.StatusOK, gin.H{"message": "Success"})
+		go ScanImage(json.Name)
+		c.JSON(http.StatusOK, gin.H{"message": "Image added successfully. Scanning image..."})
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err})
 	}
