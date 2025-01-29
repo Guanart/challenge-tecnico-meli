@@ -9,7 +9,7 @@ services:
       - "5432:5432"
 
   challenge-tecnico-meli:
-    image: guanart/challenge-tecnico-meli:1.0.1
+    image: guanart/challenge-tecnico-meli:main
     ports:
       - "${APP_PORT}:8081"
     environment:
