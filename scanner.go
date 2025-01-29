@@ -110,20 +110,17 @@ func formatJson(raw []byte) []byte {
 		fmt.Printf(err.Error())
 	}
 
+	// https://www.digitalocean.com/community/tutorials/how-to-use-json-in-go
+	vulnMap := make(map[string]bool) // Usaré un map por ID para evitar duplicados (mejor que recorrer el slice por cada vulnerabilidad agregada, mejora la complejidad algoritmica a O(1))
 	var vulnerabilities []models.Vulnerability
+
 	for _, value := range results.Matches {
 		vuln := value.Vulnerability
-		vulnerabilities = append(vulnerabilities, vuln)
+		if !vulnMap[vuln.ID] { // Si la vulnerabilidad no está en el mapa, agregarla
+			vulnMap[vuln.ID] = true
+			vulnerabilities = append(vulnerabilities, vuln)
+		}
 	}
-
-	// var vulnerabilities
-	// for _, value := range results.Matches {
-	// 	vuln := value.Vulnerability
-	// 	vulnerabilities = append(vulnerabilities, map[string]interface{}{
-	// 		"id":   image.Id,
-	// 		"name": image.Name,
-	// 	})
-	// }
 
 	json, err := json.Marshal(vulnerabilities)
 	if err != nil {

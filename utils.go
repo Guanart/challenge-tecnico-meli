@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Source: https://www.bacancytechnology.com/qanda/golang/generate-a-random-string-of-a-fixed-length-in-go
 func randomString(length int) string {
 	rand.Seed(time.Now().UnixNano())
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

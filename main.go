@@ -14,8 +14,8 @@ func main() {
 	v1 := router.Group("/api/v1")
 	{
 		v1.GET("images", getImages)
-		v1.GET("image/:name", getImageByName)
-		v1.POST("image", addImage)
+		v1.GET("images/:name", getImageByName)
+		v1.POST("images", addImage)
 	}
 	router.Run(":8081")
 }
@@ -26,7 +26,6 @@ func getImages(c *gin.Context) { // c *gin.Context es el contexto de la petició
 
 	if images == nil {
 		c.JSON(http.StatusNotFound, gin.H{"data": images, "error": "Resource not found"})
-		return
 	} else {
 		var message string
 		if len(images) > 0 {
@@ -35,7 +34,6 @@ func getImages(c *gin.Context) { // c *gin.Context es el contexto de la petició
 			message = "Images not found"
 		}
 		c.JSON(http.StatusOK, gin.H{"data": images, "message": message})
-		return
 	}
 }
 
@@ -46,10 +44,8 @@ func getImageByName(c *gin.Context) {
 
 	if image.Name == "" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Resource not found"})
-		return
 	} else {
 		c.JSON(http.StatusOK, gin.H{"data": image, "message": "Image found"})
-		return
 	}
 }
 
@@ -68,6 +64,9 @@ func addImage(c *gin.Context) {
 		go ScanImage(json.Name)
 		c.JSON(http.StatusOK, gin.H{"message": "Image added successfully. Scanning image..."})
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		c.JSON(http.StatusConflict, gin.H{"error": "Image already exists"})
 	}
 }
