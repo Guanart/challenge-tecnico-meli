@@ -6,22 +6,29 @@ Para la solución, se utilizará el lenguaje Go con el framework Gin, junto a un
 
 ## Ejecución
 ```bash
-docker run -p 8081:8081 image-vuln-scanner
+# Git clone HTTP
+git clone https://github.com/Guanart/challenge-tecnico-meli.git
+
+# Git clone SSH
+git clone git@github.com:Guanart/challenge-tecnico-meli.git
+
+cp .env.example .env
+docker compose up
 ```
 
 ## Funcionamiento
-La api consta de 3 endpoints: 
+La API consta de 3 endpoints: 
 1. POST /api/v1/images que permite indicar la imagen a analizar. Ejemplo:
     ```bash
-    curl -X POST http://localhost:8081/api/v1/images -H "Content-Type: application/json" -d '{"name": "nginx"}'
+    curl -X POST http://localhost:8080/api/v1/images -H "Content-Type: application/json" -d '{"name": "nginx"}'
     ```
 2. GET /api/v1/images/ que lista las imágenes indexadas. Ejemplo:
     ```bash
-    curl -X GET http://localhost:8081/api/v1/images
+    curl -X GET http://localhost:8080/api/v1/images
     ```
-3. GET /api/v1/images/:name que permite obtener el listado de vulnerabilidades para una determinada imagen.
+3. GET /api/v1/images/:name que permite obtener el listado de vulnerabilidades para una determinada imagen. Ejemplo:
     ```bash
-    curl -X GET http://localhost:8081/api/v1/images/nginx
+    curl -X GET http://localhost:8080/api/v1/images/nginx
     ```
 
 ## Diagrama de arquitectura en la nube
