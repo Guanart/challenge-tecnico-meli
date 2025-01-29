@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+
+  challenge-tecnico-meli:
+    image: guanart/challenge-tecnico-meli:1.0.1
+    ports:
+      - "${APP_PORT}:8081"
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: postgres
+      DB_PORT: 5432
+    depends_on:
+      - postgres

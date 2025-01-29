@@ -51,7 +51,8 @@ func GetImages() ([]map[string]interface{}, error) {
 }
 
 func GetImageByName(name string) (Image, error) {
-	stmt, err := db.Connection.Prepare("SELECT id, name, vulnerabilities FROM images WHERE name = ?")
+	// stmt, err := db.Connection.Prepare("SELECT id, name, vulnerabilities FROM images WHERE name = ?")
+	stmt, err := db.Connection.Prepare("SELECT id, name, vulnerabilities FROM images WHERE name = $1")
 
 	if err != nil {
 		return Image{}, err
@@ -88,7 +89,8 @@ func AddImage(newImage Image) (bool, error) {
 		return false, err
 	}
 
-	stmt, err := tx.Prepare("INSERT INTO images (name) VALUES (?)")
+	// stmt, err := tx.Prepare("INSERT INTO images (name) VALUES (?)")
+	stmt, err := tx.Prepare("INSERT INTO images (name) VALUES ($1)")
 
 	if err != nil {
 		return false, err

@@ -44,6 +44,7 @@ func getImageByName(c *gin.Context) {
 
 	if image.Name == "" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Resource not found"})
+		return
 	} else {
 		c.JSON(http.StatusOK, gin.H{"data": image, "message": "Image found"})
 	}
@@ -66,6 +67,7 @@ func addImage(c *gin.Context) {
 	} else {
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 		c.JSON(http.StatusConflict, gin.H{"error": "Image already exists"})
 	}

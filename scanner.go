@@ -91,7 +91,7 @@ func ScanImage(name string) (bool, error) {
 func saveResults(name string, results []byte) bool {
 	tx, err := db.Connection.Begin()
 	db.CheckError(err)
-	stmt, err := tx.Prepare("UPDATE images SET vulnerabilities = ? WHERE name = ?")
+	stmt, err := tx.Prepare("UPDATE images SET vulnerabilities = $1 WHERE name = $2")
 	db.CheckError(err)
 	defer stmt.Close()
 
