@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -40,7 +41,17 @@ func ConnectDatabase() error {
 
 	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=disable", user, password, dbname, host, port)
 	fmt.Println("(*) BD connection string: " + connStr)
-	db, err := sql.Open("postgres", connStr) // postgres driver
+
+	var db *sql.DB
+	var err error
+	for {
+		db, err = sql.Open("postgres", connStr) // postgres driver
+		if db.Ping() == nil {
+			break
+		}
+		log.Println("Error connecting to the database. Retrying...")
+		time.Sleep(5 * time.Second)
+	}
 	CheckError(err)
 	Connection = db
 	println("Conexión a la base de datos establecida")

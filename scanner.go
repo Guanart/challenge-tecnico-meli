@@ -41,39 +41,54 @@ type Matches struct {
 func ScanImage(name string) (bool, error) {
 	fileName := randomString(10) + ".json"
 	file := "/tmp/" + fileName
-	containerName := randomString(10)
-	volumeName := "sharedVolume"
 
-	// Crear contenedor grype wolfi con el volumen compartido
+	// Escanear imagen con grype
 	fmt.Printf("(*) Scanning image \"%s\"...\n", name)
-	runCmd := exec.Command("docker", "run", "--name", containerName, "-v", volumeName+":/tmp/", "cgr.dev/chainguard/grype", name, "--output", "json", "--file", file)
-
-	// docker run --name challenge -v challenge:/tmp/ cgr.dev/chainguard/grype alpine --output json --file asdasd.txt
+	runCmd := exec.Command("grype", name, "--output", "json", "--file", file)
 	err := runCmd.Run()
 	if err != nil {
-		fmt.Printf("Error running command docker run: %v\n", err.Error())
+		fmt.Println("Error running command: ", runCmd.Args)
+		fmt.Printf(err.Error())
 		return false, err
 	}
 
-	// Copiar el archivo de output a la máquina host desde el volumen
-	cpCmd := exec.Command("docker", "cp", containerName+":/tmp/"+fileName, "./"+fileName)
-	err = cpCmd.Run()
-	if err != nil {
-		fmt.Printf("Error copying file: %s\n", err)
-		return false, err
-	}
+	// LO COMENTADO DESDE AQUÍ HASTA EL FINAL ES PARA UTILIZAR EL CONTENEDOR DOCKER DE GRYPE PARA ESCANEAR LAS IMÁGENES
 
-	// Eliminar contenedor
-	dockerRmCmd := exec.Command("docker", "rm", containerName)
-	err = dockerRmCmd.Run()
-	if err != nil {
-		fmt.Printf("Error removing container: %s\n", err.Error())
-		return false, err
-	}
+	// containerName := randomString(10)
+	// volumeName := "sharedVolume"
+
+	// // Crear contenedor grype wolfi con el volumen compartido
+	// fmt.Printf("(*) Scanning image \"%s\"...\n", name)
+	// runCmd := exec.Command("docker", "run", "--name", containerName, "-v", volumeName+":/tmp/", "cgr.dev/chainguard/grype", name, "--output", "json", "--file", file)
+
+	// err := runCmd.Run()
+	// if err != nil {
+	// 	fmt.Printf("Error running command docker run: %v\n", err.Error())
+	// 	return false, err
+	// }
+
+	// // Copiar el archivo de output a la máquina host desde el volumen
+	// cpCmd := exec.Command("docker", "cp", containerName+":/tmp/"+fileName, "./"+fileName)
+	// err = cpCmd.Run()
+	// if err != nil {
+	// 	fmt.Printf("Error copying file: %s\n", err)
+	// 	return false, err
+	// }
+
+	// // Eliminar contenedor
+	// dockerRmCmd := exec.Command("docker", "rm", containerName)
+	// err = dockerRmCmd.Run()
+	// if err != nil {
+	// 	fmt.Printf("Error removing container: %s\n", err.Error())
+	// 	return false, err
+	// }
+
+	// FIN DE LO COMENTADO
 
 	// Leer archivo de output
 	// https://danilodellaquila.com/es/blog/leer-ficheros-json-en-golang
-	raw, err := ioutil.ReadFile(fileName)
+	// raw, err := ioutil.ReadFile(fileName)
+	raw, err := ioutil.ReadFile(file)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
@@ -82,7 +97,7 @@ func ScanImage(name string) (bool, error) {
 	json := formatJson(raw)
 
 	// Eliminar archivo de output
-	os.Remove(fileName)
+	os.Remove(file)
 	fmt.Printf("(*) File deleted")
 
 	return saveResults(name, json), nil
